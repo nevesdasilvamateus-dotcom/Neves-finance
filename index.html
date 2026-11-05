@@ -1,0 +1,613 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS FINANCE</title>
+<style>
+:root {
+  --bg:#070d18;
+  --panel:#101c2d;
+  --cyan:#00e5ff;
+  --green:#00e676;
+  --red:#ff5263;
+  --text:#eaf7ff;
+  --muted:#8da5bb;
+}
+* {box-sizing:border-box}
+body {
+  margin:0;padding:16px;background:var(--bg);
+  color:var(--text);font-family:Arial,sans-serif;
+}
+header {text-align:center;margin:12px 0 25px}
+header h1 {
+  color:var(--cyan);letter-spacing:3px;
+  text-shadow:0 0 14px #00e5ff66;
+}
+header p {color:var(--muted);font-size:12px}
+nav {display:flex;gap:8px;margin-bottom:20px}
+nav button,.filters button {
+  flex:1;padding:12px 5px;border:1px solid #29445b;
+  border-radius:8px;background:var(--panel);
+  color:var(--muted);font-weight:bold;
+}
+nav button.active,.filters button.active {
+  color:var(--cyan);border-color:var(--cyan);
+}
+.tab {display:none}
+.tab.active {display:block}
+.card {
+  background:var(--panel);border:1px solid #20394f;
+  border-radius:13px;padding:16px;margin-bottom:13px;
+}
+.card h3 {margin-top:0;color:var(--cyan)}
+.balance {font-size:29px;font-weight:bold;margin:10px 0}
+.green {color:var(--green)}
+.red {color:var(--red)}
+.muted {color:var(--muted)}
+input,select {
+  width:100%;padding:12px;margin:6px 0 12px;
+  border-radius:8px;border:1px solid #29445b;
+  background:#091321;color:var(--text);
+}
+button.action {
+  width:100%;padding:13px;background:#063747;
+  border:1px solid var(--cyan);border-radius:8px;
+  color:var(--cyan);font-weight:bold;
+}
+.transaction {
+  padding:12px 0;border-bottom:1px solid #26394b;
+}
+.transaction:last-child {border-bottom:none}
+.transaction small {
+  display:block;color:var(--muted);margin-top:5px;
+}
+.delete {
+  float:right;background:transparent;color:var(--red);
+  border:1px solid var(--red);border-radius:6px;padding:5px 8px;
+}
+.filters {display:flex;gap:6px;margin:12px 0}
+.filters button {padding:10px 2px;font-size:11px}
+.legend {
+  display:flex;gap:18px;justify-content:center;
+  margin:14px 0;font-size:12px;
+}
+.legend span::before {
+  content:"";display:inline-block;width:9px;height:9px;
+  margin-right:5px;border-radius:2px;
+}
+.legend .in::before {background:var(--green)}
+.legend .out::before {background:var(--red)}
+.chart-scroll {overflow-x:auto;padding-bottom:10px}
+.chart {
+  display:flex;align-items:stretch;gap:8px;
+  min-height:220px;width:max-content;min-width:100%;
+  border-bottom:1px solid #385064;padding:10px 5px 0;
+}
+.bar-group {
+  width:48px;display:flex;flex-direction:column;
+  align-items:center;justify-content:flex-end;
+}
+.bars {
+  height:165px;display:flex;align-items:flex-end;gap:4px;
+}
+.bar {
+  width:19px;min-height:2px;border:0;
+  border-radius:5px 5px 0 0;padding:0;
+}
+.bar.income {background:var(--green)}
+.bar.expense {background:var(--red)}
+.bar:active {opacity:.6}
+.bar-label {
+  font-size:10px;color:var(--muted);
+  margin-top:7px;white-space:nowrap;
+}
+.detail-item {
+  padding:10px 0;border-bottom:1px solid #26394b;
+}
+@media(max-width:380px) {
+  body {padding:12px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>NEXUS FINANCE</h1>
+  <p>CONTROLE FINANCEIRO PESSOAL</p>
+</header>
+
+<nav>
+  <button class="active" data-tab="inicio">INÍCIO</button>
+  <button data-tab="analises">ANÁLISES</button>
+</nav>
+
+<section id="inicio" class="tab active">
+
+  <div class="card">
+    <h3>Saldo atual</h3>
+    <div class="balance" id="balance">R$ 0,00</div>
+    <p class="muted">Seu saldo financeiro</p>
+  </div>
+
+  <div class="card">
+    <h3>Total de entradas</h3>
+    <div class="balance green" id="totalIncome">R$ 0,00</div>
+  </div>
+
+  <div class="card">
+    <h3>Total de saídas</h3>
+    <div class="balance red" id="totalExpense">R$ 0,00</div>
+  </div>
+
+  <div class="card">
+    <h3>Nova movimentação</h3>
+
+    <label>Tipo</label>
+    <select id="type">
+      <option value="income">Entrada</option>
+      <option value="expense">Saída</option>
+    </select>
+
+    <label>Descrição</label>
+    <input id="description" placeholder="Ex.: Salário ou alimentação">
+
+    <label>Categoria</label>
+    <input id="category" placeholder="Ex.: Trabalho, mercado">
+
+    <label>Valor (R$)</label>
+    <input id="amount" type="number" min="0.01" step="0.01" placeholder="0,00">
+
+    <label>Data</label>
+    <input id="date" type="date">
+
+    <button class="action" id="addTransaction">
+      ADICIONAR MOVIMENTAÇÃO
+    </button>
+  </div>
+
+  <div class="card">
+    <h3>Histórico de movimentações</h3>
+    <div id="history"></div>
+  </div>
+</section>
+
+<section id="analises" class="tab">
+  <div class="card">
+    <h3>Análise financeira</h3>
+    <p class="muted">Escolha o período que deseja analisar.</p>
+
+    <div class="filters">
+      <button data-period="day" class="active">DIA</button>
+      <button data-period="week">SEMANA</button>
+      <button data-period="month">MÊS</button>
+      <button data-period="year">ANO</button>
+    </div>
+
+    <label>Data de referência</label>
+    <input type="date" id="referenceDate">
+
+    <div class="legend">
+      <span class="in">Entradas</span>
+      <span class="out">Saídas</span>
+    </div>
+
+    <div class="chart-scroll">
+      <div id="chart" class="chart"></div>
+    </div>
+
+    <p class="muted">
+      Toque em uma coluna para ver as movimentações correspondentes.
+    </p>
+  </div>
+
+  <div class="card">
+    <h3>Resumo do período</h3>
+    <p>Entradas: <strong class="green" id="periodIncome">R$ 0,00</strong></p>
+    <p>Saídas: <strong class="red" id="periodExpense">R$ 0,00</strong></p>
+  </div>
+
+  <div class="card">
+    <h3 id="detailTitle">Movimentações selecionadas</h3>
+    <div id="details" class="muted">
+      Toque em uma coluna do gráfico para ver os detalhes.
+    </div>
+  </div>
+</section>
+
+<script>
+const STORAGE = "nexus_finance_transactions_v1";
+let transactions = [];
+
+try {
+  const saved = JSON.parse(localStorage.getItem(STORAGE) || "[]");
+  transactions = Array.isArray(saved) ? saved : [];
+} catch(e) {
+  transactions = [];
+}
+
+let period = "day";
+let selectedBucket = null;
+let selectedType = null;
+
+const $ = id => document.getElementById(id);
+
+function money(value) {
+  return Number(value || 0).toLocaleString("pt-BR", {
+    style:"currency",currency:"BRL"
+  });
+}
+
+function dateValue(value) {
+  if (!value) return null;
+  const p = String(value).split("-");
+  if (p.length !== 3) return null;
+  return new Date(Number(p[0]),Number(p[1])-1,Number(p[2]));
+}
+
+function transactionType(t) {
+  const type = String(t.type || t.tipo || "").toLowerCase();
+  return ["income","entrada","receita"].includes(type)
+    ? "income" : "expense";
+}
+
+function transactionAmount(t) {
+  return Number(t.amount ?? t.valor ?? 0) || 0;
+}
+
+function transactionDate(t) {
+  return t.date || t.data || "";
+}
+
+function transactionDescription(t) {
+  return t.description || t.descricao || "Sem descrição";
+}
+
+function transactionCategory(t) {
+  return t.category || t.categoria || "Sem categoria";
+}
+
+function save() {
+  localStorage.setItem(STORAGE,JSON.stringify(transactions));
+}
+
+function updateDashboard() {
+  let income = 0, expense = 0;
+
+  transactions.forEach(t => {
+    if (transactionType(t) === "income")
+      income += transactionAmount(t);
+    else
+      expense += transactionAmount(t);
+  });
+
+  $("balance").textContent = money(income-expense);
+  $("totalIncome").textContent = money(income);
+  $("totalExpense").textContent = money(expense);
+}
+
+function renderHistory() {
+  const history = $("history");
+  history.replaceChildren();
+
+  if (!transactions.length) {
+    history.textContent = "Nenhuma movimentação cadastrada.";
+    return;
+  }
+
+  [...transactions].reverse().forEach(t => {
+    const item = document.createElement("div");
+    item.className = "transaction";
+
+    const title = document.createElement("strong");
+    title.textContent = transactionDescription(t);
+
+    const amount = document.createElement("strong");
+    amount.className =
+      transactionType(t) === "income" ? "green" : "red";
+    amount.textContent =
+      (transactionType(t) === "income" ? "+ " : "- ") +
+      money(transactionAmount(t));
+
+    const del = document.createElement("button");
+    del.className = "delete";
+    del.textContent = "Excluir";
+    del.addEventListener("click",() => {
+      transactions = transactions.filter(x => x.id !== t.id);
+      save();
+      refresh();
+    });
+
+    const info = document.createElement("small");
+    info.textContent =
+      transactionCategory(t) + " • " + transactionDate(t);
+
+    item.append(title,del,document.createElement("br"),amount,info);
+    history.appendChild(item);
+  });
+}
+
+function addTransaction() {
+  const type = $("type").value;
+  const description = $("description").value.trim();
+  const category = $("category").value.trim();
+  const amount = Number($("amount").value);
+  const date = $("date").value;
+
+  if (!description || !category || !date ||
+      !Number.isFinite(amount) || amount <= 0) {
+    alert("Preencha todos os campos corretamente.");
+    return;
+  }
+
+  transactions.push({
+    id: Date.now().toString() + Math.random().toString(16).slice(2),
+    type,description,category,amount,date
+  });
+
+  save();
+  $("description").value = "";
+  $("category").value = "";
+  $("amount").value = "";
+  refresh();
+  alert("Movimentação adicionada!");
+}
+
+function localDate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth()+1).padStart(2,"0");
+  const d = String(date.getDate()).padStart(2,"0");
+  return `${y}-${m}-${d}`;
+}
+
+function getBuckets(reference) {
+  const y = reference.getFullYear();
+  const m = reference.getMonth();
+  const d = reference.getDate();
+  const buckets = [];
+
+  if (period === "day") {
+    buckets.push({
+      label:"Dia",
+      start:new Date(y,m,d),
+      end:new Date(y,m,d+1)
+    });
+  }
+
+  if (period === "week") {
+    const start = new Date(y,m,d);
+    const weekday = (start.getDay()+6)%7;
+    start.setDate(start.getDate()-weekday);
+
+    for (let i=0;i<7;i++) {
+      const date = new Date(start);
+      date.setDate(start.getDate()+i);
+      const end = new Date(date);
+      end.setDate(end.getDate()+1);
+
+      buckets.push({
+        label:["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"][i],
+        start:date,end
+      });
+    }
+  }
+
+  if (period === "month") {
+    const days = new Date(y,m+1,0).getDate();
+
+    for (let i=1;i<=days;i++) {
+      buckets.push({
+        label:String(i),
+        start:new Date(y,m,i),
+        end:new Date(y,m,i+1)
+      });
+    }
+  }
+
+  if (period === "year") {
+    for (let i=0;i<12;i++) {
+      buckets.push({
+        label:["Jan","Fev","Mar","Abr","Mai","Jun",
+          "Jul","Ago","Set","Out","Nov","Dez"][i],
+        start:new Date(y,i,1),
+        end:new Date(y,i+1,1)
+      });
+    }
+  }
+
+  return buckets;
+}
+
+function belongsToBucket(t,bucket) {
+  const date = dateValue(transactionDate(t));
+  return date && date >= bucket.start && date < bucket.end;
+}
+
+function renderDetails(bucket,type) {
+  selectedBucket = bucket;
+  selectedType = type;
+
+  $("detailTitle").textContent =
+    (type === "income" ? "Entradas — " : "Saídas — ") +
+    bucket.label;
+
+  const details = $("details");
+  details.replaceChildren();
+
+  const found = transactions.filter(t =>
+    transactionType(t) === type && belongsToBucket(t,bucket)
+  );
+
+  if (!found.length) {
+    details.textContent =
+      "Nenhuma movimentação encontrada nesta coluna.";
+    return;
+  }
+
+  found.forEach(t => {
+    const item = document.createElement("div");
+    item.className = "detail-item";
+
+    const name = document.createElement("strong");
+    name.textContent = transactionDescription(t);
+
+    const value = document.createElement("div");
+    value.className = type === "income" ? "green" : "red";
+    value.textContent = money(transactionAmount(t));
+
+    const info = document.createElement("small");
+    info.textContent =
+      transactionCategory(t) + " • " + transactionDate(t);
+
+    item.append(name,value,info);
+    details.appendChild(item);
+  });
+}
+
+function renderChart() {
+  const reference = dateValue($("referenceDate").value);
+  if (!reference) return;
+
+  const buckets = getBuckets(reference);
+  const chart = $("chart");
+  chart.replaceChildren();
+
+  let totalIncome = 0;
+  let totalExpense = 0;
+  let max = 0;
+
+  const values = buckets.map(bucket => {
+    let income = 0, expense = 0;
+
+    transactions.forEach(t => {
+      if (!belongsToBucket(t,bucket)) return;
+
+      if (transactionType(t) === "income")
+        income += transactionAmount(t);
+      else
+        expense += transactionAmount(t);
+    });
+
+    totalIncome += income;
+    totalExpense += expense;
+    max = Math.max(max,income,expense);
+
+    return {bucket,income,expense};
+  });
+
+  $("periodIncome").textContent = money(totalIncome);
+  $("periodExpense").textContent = money(totalExpense);
+
+  values.forEach(value => {
+    const group = document.createElement("div");
+    group.className = "bar-group";
+
+    const bars = document.createElement("div");
+    bars.className = "bars";
+
+    const incomeBar = document.createElement("button");
+    incomeBar.className = "bar income";
+    incomeBar.title = "Entradas: " + money(value.income);
+    incomeBar.style.height =
+      Math.max(2,max ? value.income/max*155 : 2) + "px";
+    incomeBar.setAttribute("aria-label","Entradas "+value.bucket.label);
+    incomeBar.addEventListener("click",() =>
+      renderDetails(value.bucket,"income")
+    );
+
+    const expenseBar = document.createElement("button");
+    expenseBar.className = "bar expense";
+    expenseBar.title = "Saídas: " + money(value.expense);
+    expenseBar.style.height =
+      Math.max(2,max ? value.expense/max*155 : 2) + "px";
+    expenseBar.setAttribute("aria-label","Saídas "+value.bucket.label);
+    expenseBar.addEventListener("click",() =>
+      renderDetails(value.bucket,"expense")
+    );
+
+    bars.append(incomeBar,expenseBar);
+
+    const label = document.createElement("div");
+    label.className = "bar-label";
+    label.textContent = value.bucket.label;
+
+    group.append(bars,label);
+    chart.appendChild(group);
+  });
+
+  if (selectedBucket && selectedType) {
+    const stillExists = buckets.find(b =>
+      b.start.getTime() === selectedBucket.start.getTime()
+    );
+
+    if (stillExists) {
+      renderDetails(stillExists,selectedType);
+    } else {
+      selectedBucket = null;
+      selectedType = null;
+      $("detailTitle").textContent = "Movimentações selecionadas";
+      $("details").textContent =
+        "Toque em uma coluna do gráfico para ver os detalhes.";
+    }
+  }
+}
+
+function refresh() {
+  updateDashboard();
+  renderHistory();
+  renderChart();
+}
+
+document.querySelectorAll("nav button").forEach(button => {
+  button.addEventListener("click",() => {
+    document.querySelectorAll("nav button").forEach(b =>
+      b.classList.remove("active")
+    );
+    document.querySelectorAll(".tab").forEach(tab =>
+      tab.classList.remove("active")
+    );
+
+    button.classList.add("active");
+    $(button.dataset.tab).classList.add("active");
+  });
+});
+
+document.querySelectorAll("[data-period]").forEach(button => {
+  button.addEventListener("click",() => {
+    document.querySelectorAll("[data-period]").forEach(b =>
+      b.classList.remove("active")
+    );
+
+    button.classList.add("active");
+    period = button.dataset.period;
+    selectedBucket = null;
+    selectedType = null;
+
+    $("detailTitle").textContent = "Movimentações selecionadas";
+    $("details").textContent =
+      "Toque em uma coluna do gráfico para ver os detalhes.";
+
+    renderChart();
+  });
+});
+
+$("addTransaction").addEventListener("click",addTransaction);
+
+$("referenceDate").addEventListener("change",() => {
+  selectedBucket = null;
+  selectedType = null;
+  $("detailTitle").textContent = "Movimentações selecionadas";
+  $("details").textContent =
+    "Toque em uma coluna do gráfico para ver os detalhes.";
+  renderChart();
+});
+
+const today = localDate(new Date());
+$("date").value = today;
+$("referenceDate").value = today;
+
+refresh();
+</script>
+</body>
+</html>
