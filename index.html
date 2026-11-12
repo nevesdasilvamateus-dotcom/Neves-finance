@@ -1,11 +1,11 @@
 
+ 
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NEVES FINANCE</title>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
@@ -50,7 +50,7 @@ header small {color:var(--muted)}
   margin:auto;
   padding:18px;
 }
-.panel,.card {
+.panel,.metric {
   background:var(--panel);
   border:1px solid var(--border);
   border-radius:15px;
@@ -90,20 +90,9 @@ button.danger {
   border-radius:8px;
   padding:8px 10px;
 }
-button.small {
-  padding:8px 10px;
-  font-size:12px;
-}
-.auth {
-  max-width:420px;
-  margin:55px auto;
-  padding:20px;
-}
-.auth-tabs {
-  display:flex;
-  gap:8px;
-  margin:18px 0;
-}
+button.small {padding:8px 10px;font-size:12px}
+.auth {max-width:420px;margin:55px auto;padding:20px}
+.auth-tabs {display:flex;gap:8px;margin:18px 0}
 .auth-tabs button {flex:1}
 .auth-tabs button.active {
   background:var(--blue);
@@ -116,6 +105,7 @@ button.small {
   background:#172c43;
   color:#b9ddff;
   font-size:13px;
+  overflow-wrap:anywhere;
 }
 nav {
   display:flex;
@@ -143,16 +133,8 @@ nav button.active {
   grid-template-columns:repeat(3,1fr);
   gap:12px;
 }
-.metric {
-  background:var(--panel);
-  border:1px solid var(--border);
-  padding:16px;
-  border-radius:13px;
-}
-.metric span {
-  color:var(--muted);
-  font-size:12px;
-}
+.metric {margin-bottom:0}
+.metric span {color:var(--muted);font-size:12px}
 .metric strong {
   display:block;
   font-size:20px;
@@ -177,13 +159,9 @@ nav button.active {
 }
 .transaction:last-child {border:0}
 .transaction-info {min-width:0}
-.transaction-info strong {display:block}
+.transaction-info strong {display:block;overflow-wrap:anywhere}
 .transaction-info small {color:var(--muted)}
-.transaction-actions {
-  display:flex;
-  gap:5px;
-  flex-wrap:wrap;
-}
+.transaction-actions {display:flex;gap:5px;flex-wrap:wrap}
 .filter {
   display:flex;
   gap:8px;
@@ -206,35 +184,49 @@ nav button.active {
 .chart {
   display:flex;
   align-items:flex-end;
-  gap:10px;
+  gap:8px;
   height:220px;
   padding:15px 5px 0;
   overflow-x:auto;
+  overflow-y:hidden;
 }
 .chart-item {
-  min-width:34px;
+  min-width:48px;
   flex:1;
   display:flex;
   height:100%;
   align-items:flex-end;
   justify-content:center;
-  gap:3px;
-  position:relative;
+  gap:4px;
+  border-bottom:1px solid var(--border);
 }
 .bar {
-  width:13px;
-  min-height:2px;
+  width:17px;
+  min-height:4px;
   border:0;
   border-radius:5px 5px 0 0;
   padding:0;
+  transition:height .25s ease;
 }
 .bar.income {background:var(--green)}
 .bar.expense {background:var(--red)}
-.chart-label {
+.chart-labels {
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  margin-top:7px;
+}
+.chart-labels span {
+  min-width:48px;
+  flex:1;
+  text-align:center;
   font-size:10px;
   color:var(--muted);
-  text-align:center;
-  margin-top:7px;
+}
+.chart-subtitle {
+  font-size:12px;
+  color:var(--muted);
+  margin:8px 0;
 }
 .legend {
   display:flex;
@@ -258,7 +250,7 @@ nav button.active {
   display:flex;
   align-items:center;
   justify-content:center;
-  background:conic-gradient(var(--red) 0deg, var(--green) 0deg);
+  background:conic-gradient(var(--red) 0deg,var(--green) 0deg);
   position:relative;
 }
 .donut::before {
@@ -269,15 +261,14 @@ nav button.active {
   border-radius:50%;
   background:var(--panel);
 }
-.donut-center {
-  z-index:1;
-  text-align:center;
-}
+.donut-center {z-index:1;text-align:center}
 .donut-center strong {font-size:23px}
 .detail-list {
   margin-top:12px;
   color:var(--muted);
   font-size:13px;
+  line-height:1.8;
+  overflow-wrap:anywhere;
 }
 .empty {
   color:var(--muted);
@@ -291,6 +282,7 @@ nav button.active {
   .metric strong {font-size:19px}
   .container {padding:12px}
   .auth {margin:25px auto}
+  .chart-item,.chart-labels span {min-width:42px}
 }
 </style>
 </head>
@@ -306,7 +298,7 @@ nav button.active {
     onclick="logout()">Sair</button>
 </header>
 
-<!-- AUTENTICAÇÃO -->
+<!-- LOGIN E CADASTRO -->
 <section id="authScreen" class="auth panel">
   <h2 id="authTitle">Bem-vindo!</h2>
   <p class="muted" id="authSubtitle">Entre na sua conta para continuar.</p>
@@ -331,165 +323,183 @@ nav button.active {
   <input id="password" type="password" placeholder="Sua senha"
     autocomplete="current-password">
 
-  <button id="authButton" class="primary" style="width:100%;margin-top:12px"
-    onclick="authenticate()">Entrar</button>
+  <button id="authButton" class="primary"
+    style="width:100%;margin-top:12px" onclick="authenticate()">
+    Entrar
+  </button>
 
   <div id="authMessage" class="message hidden"></div>
 </section>
 
 <!-- APLICATIVO -->
 <div id="app">
+  <nav>
+    <button class="active" data-page="home"
+      onclick="showPage('home')">Início</button>
+    <button data-page="analysis"
+      onclick="showPage('analysis')">Análises</button>
+    <button data-page="finance"
+      onclick="showPage('finance')">Financeiro</button>
+  </nav>
 
-<nav>
-  <button class="active" data-page="home" onclick="showPage('home')">Início</button>
-  <button data-page="analysis" onclick="showPage('analysis')">Análises</button>
-  <button data-page="finance" onclick="showPage('finance')">Financeiro</button>
-</nav>
+  <main class="container">
 
-<main class="container">
+    <!-- INÍCIO -->
+    <section id="homePage">
+      <h2>Visão geral</h2>
+      <p class="muted" id="welcomeText">Suas finanças em um só lugar.</p>
 
-<!-- INÍCIO -->
-<section id="homePage">
-  <h2>Visão geral</h2>
-  <p class="muted" id="welcomeText">Suas finanças em um só lugar.</p>
-
-  <div class="grid">
-    <div class="metric">
-      <span>Saldo atual</span>
-      <strong id="balance">R$ 0,00</strong>
-    </div>
-    <div class="metric">
-      <span>Total de entradas</span>
-      <strong class="green" id="incomeTotal">R$ 0,00</strong>
-    </div>
-    <div class="metric">
-      <span>Total de saídas</span>
-      <strong class="red" id="expenseTotal">R$ 0,00</strong>
-    </div>
-  </div>
-
-  <div class="panel" style="margin-top:17px">
-    <h3>Nova movimentação</h3>
-
-    <div class="form-grid">
-      <div>
-        <label>Tipo</label>
-        <select id="type">
-          <option value="income">Entrada</option>
-          <option value="expense">Saída</option>
-        </select>
+      <div class="grid">
+        <div class="metric">
+          <span>Saldo atual</span>
+          <strong id="balance">R$ 0,00</strong>
+        </div>
+        <div class="metric">
+          <span>Total de entradas</span>
+          <strong class="green" id="incomeTotal">R$ 0,00</strong>
+        </div>
+        <div class="metric">
+          <span>Total de saídas</span>
+          <strong class="red" id="expenseTotal">R$ 0,00</strong>
+        </div>
       </div>
-      <div>
-        <label>Valor (R$)</label>
-        <input id="amount" type="number" min="0.01"
-          step="0.01" placeholder="0,00">
+
+      <div class="panel" style="margin-top:17px">
+        <h3>Nova movimentação</h3>
+
+        <div class="form-grid">
+          <div>
+            <label>Tipo</label>
+            <select id="type">
+              <option value="income">Entrada</option>
+              <option value="expense">Saída</option>
+            </select>
+          </div>
+          <div>
+            <label>Valor (R$)</label>
+            <input id="amount" type="number" min="0.01"
+              step="0.01" placeholder="0,00">
+          </div>
+          <div>
+            <label>Descrição</label>
+            <input id="description" type="text" placeholder="Ex: Salário">
+          </div>
+          <div>
+            <label>Categoria</label>
+            <select id="category">
+              <option>Salário</option>
+              <option>Alimentação</option>
+              <option>Transporte</option>
+              <option>Moradia</option>
+              <option>Contas</option>
+              <option>Compras</option>
+              <option>Lazer</option>
+              <option>Saúde</option>
+              <option>Educação</option>
+              <option>Investimentos</option>
+              <option>Outros</option>
+            </select>
+          </div>
+          <div>
+            <label>Data</label>
+            <input id="date" type="date">
+          </div>
+        </div>
+
+        <button class="primary" style="width:100%;margin-top:12px"
+          onclick="saveTransaction()">Salvar movimentação</button>
+        <div id="formMessage" class="message hidden"></div>
       </div>
-      <div>
-        <label>Descrição</label>
-        <input id="description" type="text" placeholder="Ex: Salário">
+
+      <div class="panel">
+        <h3>Histórico de movimentações</h3>
+        <div id="history"></div>
       </div>
-      <div>
-        <label>Categoria</label>
-        <select id="category">
-          <option>Salário</option>
-          <option>Alimentação</option>
-          <option>Transporte</option>
-          <option>Moradia</option>
-          <option>Contas</option>
-          <option>Compras</option>
-          <option>Lazer</option>
-          <option>Saúde</option>
-          <option>Educação</option>
-          <option>Investimentos</option>
-          <option>Outros</option>
-        </select>
+    </section>
+
+    <!-- ANÁLISES -->
+    <section id="analysisPage" class="hidden">
+      <h2>Análises</h2>
+      <p class="muted">Compare suas entradas e saídas.</p>
+
+      <div class="filter" id="analysisFilters">
+        <button class="active" data-period="day"
+          onclick="setPeriod('analysis','day')">Dia</button>
+        <button data-period="week"
+          onclick="setPeriod('analysis','week')">Semana</button>
+        <button data-period="month"
+          onclick="setPeriod('analysis','month')">Mês</button>
+        <button data-period="year"
+          onclick="setPeriod('analysis','year')">Ano</button>
       </div>
-      <div>
-        <label>Data</label>
-        <input id="date" type="date">
+
+      <div class="panel">
+        <div class="legend">
+          <span><i class="dot" style="background:var(--green)"></i>Entradas</span>
+          <span><i class="dot" style="background:var(--red)"></i>Saídas</span>
+        </div>
+
+        <p class="chart-subtitle" id="analysisPeriodLabel"></p>
+        <div id="barChart" class="chart"></div>
+        <div id="chartLabels" class="chart-labels"></div>
+        <div id="chartDetails" class="detail-list">
+          Toque em uma barra para ver os detalhes.
+        </div>
       </div>
-    </div>
+    </section>
 
-    <button class="primary" style="width:100%;margin-top:12px"
-      onclick="saveTransaction()">Salvar movimentação</button>
-    <div id="formMessage" class="message hidden"></div>
-  </div>
+    <!-- FINANCEIRO -->
+    <section id="financePage" class="hidden">
+      <h2>Financeiro</h2>
+      <p class="muted">Veja a proporção entre despesas e resultado.</p>
 
-  <div class="panel">
-    <h3>Histórico de movimentações</h3>
-    <div id="history"></div>
-  </div>
-</section>
-
-<!-- ANÁLISES -->
-<section id="analysisPage" class="hidden">
-  <h2>Análises</h2>
-  <p class="muted">Compare suas entradas e saídas.</p>
-
-  <div class="filter">
-    <button class="active" data-period="day" onclick="setPeriod('day')">Dia</button>
-    <button data-period="week" onclick="setPeriod('week')">Semana</button>
-    <button data-period="month" onclick="setPeriod('month')">Mês</button>
-    <button data-period="year" onclick="setPeriod('year')">Ano</button>
-  </div>
-
-  <div class="panel">
-    <div class="legend">
-      <span><i class="dot" style="background:var(--green)"></i>Entradas</span>
-      <span><i class="dot" style="background:var(--red)"></i>Saídas</span>
-    </div>
-    <div id="barChart" class="chart"></div>
-    <div id="chartLabels" class="chart-label"></div>
-    <div id="chartDetails" class="detail-list">
-      Toque em uma barra para ver os detalhes.
-    </div>
-  </div>
-</section>
-
-<!-- FINANCEIRO -->
-<section id="financePage" class="hidden">
-  <h2>Financeiro</h2>
-  <p class="muted">Veja a proporção entre despesas e entrada .</p>
-
-  <div class="filter">
-    <button class="active" data-period="day" onclick="setPeriod('day')">Dia</button>
-    <button data-period="week" onclick="setPeriod('week')">Semana</button>
-    <button data-period="month" onclick="setPeriod('month')">Mês</button>
-    <button data-period="year" onclick="setPeriod('year')">Ano</button>
-  </div>
-
-  <div class="panel">
-    <h3>Distribuição financeira</h3>
-    <div id="donut" class="donut">
-      <div class="donut-center">
-        <strong id="profitPercent">0%</strong>
-        <div class="muted">Entrada</div>
+      <div class="filter" id="financeFilters">
+        <button class="active" data-period="day"
+          onclick="setPeriod('finance','day')">Dia</button>
+        <button data-period="week"
+          onclick="setPeriod('finance','week')">Semana</button>
+        <button data-period="month"
+          onclick="setPeriod('finance','month')">Mês</button>
+        <button data-period="year"
+          onclick="setPeriod('finance','year')">Ano</button>
       </div>
-    </div>
-    <div class="legend" style="justify-content:center">
-      <span><i class="dot" style="background:var(--red)"></i>Despesas</span>
-      <span><i class="dot" style="background:var(--green)"></i>Lucros</span>
-    </div>
-    <div class="detail-list" id="financeDetails"></div>
-  </div>
 
-  <div class="grid">
-    <div class="metric">
-      <span>Lucro no período</span>
-      <strong class="green" id="periodIncome">R$ 0,00</strong>
-    </div>
-    <div class="metric">
-      <span>Despesas no período</span>
-      <strong class="red" id="periodExpense">R$ 0,00</strong>
-    </div>
-    <div class="metric">
-      <span>Resultado no período</span>
-      <strong id="periodProfit">R$ 0,00</strong>
-    </div>
-  </div>
-</section>
+      <div class="panel">
+        <h3>Distribuição financeira</h3>
+        <p class="chart-subtitle" id="financePeriodLabel"></p>
 
-</main>
+        <div id="donut" class="donut">
+          <div class="donut-center">
+            <strong id="profitPercent">0%</strong>
+            <div class="muted">Resultado</div>
+          </div>
+        </div>
+
+        <div class="legend" style="justify-content:center">
+          <span><i class="dot" style="background:var(--red)"></i>Despesas</span>
+          <span><i class="dot" style="background:var(--green)"></i>Resultado</span>
+        </div>
+
+        <div class="detail-list" id="financeDetails"></div>
+      </div>
+
+      <div class="grid">
+        <div class="metric">
+          <span>Entradas no período</span>
+          <strong class="green" id="periodIncome">R$ 0,00</strong>
+        </div>
+        <div class="metric">
+          <span>Despesas no período</span>
+          <strong class="red" id="periodExpense">R$ 0,00</strong>
+        </div>
+        <div class="metric">
+          <span>Resultado no período</span>
+          <strong id="periodProfit">R$ 0,00</strong>
+        </div>
+      </div>
+    </section>
+
+  </main>
 </div>
 
 <script>
@@ -505,11 +515,19 @@ const db = window.supabase.createClient(
 let currentUser = null;
 let transactions = [];
 let authMode = "login";
-let currentPeriod = "day";
 
-/* UTILITÁRIOS */
+let analysisPeriod = "day";
+let financePeriod = "day";
+
+/* CONTROLE DA ATUALIZAÇÃO AUTOMÁTICA */
+let transactionsChannel = null;
+let refreshInterval = null;
+let isLoadingTransactions = false;
+let refreshRequested = false;
+
 const $ = id => document.getElementById(id);
 
+/* UTILITÁRIOS */
 function money(value) {
   return Number(value || 0).toLocaleString("pt-BR", {
     style:"currency",
@@ -524,7 +542,16 @@ function localDate(date = new Date()) {
   return `${y}-${m}-${d}`;
 }
 
-function showMessage(id, message) {
+function parseLocalDate(value) {
+  const parts = String(value).slice(0,10).split("-").map(Number);
+  return new Date(parts[0],parts[1]-1,parts[2]);
+}
+
+function dateKey(date) {
+  return localDate(date);
+}
+
+function showMessage(id,message) {
   const el = $(id);
   el.textContent = message;
   el.classList.remove("hidden");
@@ -532,6 +559,16 @@ function showMessage(id, message) {
 
 function hideMessage(id) {
   $(id).classList.add("hidden");
+}
+
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g,char => ({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#39;"
+  }[char]));
 }
 
 /* LOGIN E CADASTRO */
@@ -547,8 +584,8 @@ function switchAuth(mode) {
 
   $("authSubtitle").textContent =
     mode === "login"
-    ? "Entre na sua conta para continuar."
-    : "Preencha seus dados para começar.";
+      ? "Entre na sua conta para continuar."
+      : "Preencha seus dados para começar.";
 
   $("authButton").textContent =
     mode === "login" ? "Entrar" : "Cadastrar";
@@ -557,6 +594,32 @@ function switchAuth(mode) {
     mode === "login" ? "current-password" : "new-password";
 
   hideMessage("authMessage");
+}
+
+function friendlyError(message) {
+  const m = String(message || "").toLowerCase();
+
+  if (m.includes("email rate limit exceeded")) {
+    return "Limite de envio de e-mails atingido. Aguarde antes de tentar novamente ou configure SMTP no Supabase.";
+  }
+
+  if (m.includes("invalid login credentials")) {
+    return "E-mail ou senha incorretos.";
+  }
+
+  if (m.includes("already registered") || m.includes("user already registered")) {
+    return "Este e-mail já possui uma conta. Tente entrar.";
+  }
+
+  if (m.includes("email not confirmed")) {
+    return "Confirme seu e-mail antes de entrar.";
+  }
+
+  if (m.includes("password should be")) {
+    return "A senha não atende aos requisitos.";
+  }
+
+  return "Erro: " + message;
 }
 
 async function authenticate() {
@@ -576,16 +639,16 @@ async function authenticate() {
     return;
   }
 
+  if (authMode === "register" && !name) {
+    showMessage("authMessage","Digite seu nome.");
+    return;
+  }
+
   $("authButton").disabled = true;
   $("authButton").textContent = "Aguarde...";
 
   try {
     if (authMode === "register") {
-      if (!name) {
-        showMessage("authMessage","Digite seu nome.");
-        return;
-      }
-
       const {data,error} = await db.auth.signUp({
         email,
         password,
@@ -596,15 +659,14 @@ async function authenticate() {
 
       if (error) throw error;
 
-      if (data.session) {
+      if (data.session && data.user) {
         await initializeUser(data.user);
       } else {
         showMessage(
           "authMessage",
-          "Conta criada! Confira seu e-mail para confirmar o cadastro. Depois volte e entre."
+          "Cadastro iniciado! Confira seu e-mail para confirmar a conta. Depois volte e entre."
         );
       }
-
     } else {
       const {data,error} = await db.auth.signInWithPassword({
         email,
@@ -612,10 +674,8 @@ async function authenticate() {
       });
 
       if (error) throw error;
-
       await initializeUser(data.user);
     }
-
   } catch(error) {
     showMessage("authMessage",friendlyError(error.message));
   } finally {
@@ -625,29 +685,14 @@ async function authenticate() {
   }
 }
 
-function friendlyError(message) {
-  const m = String(message || "").toLowerCase();
-
-  if (m.includes("invalid login credentials"))
-    return "E-mail ou senha incorretos.";
-
-  if (m.includes("already registered"))
-    return "Este e-mail já possui uma conta. Tente entrar.";
-
-  if (m.includes("password should be"))
-    return "A senha não atende aos requisitos.";
-
-  if (m.includes("email not confirmed"))
-    return "Confirme seu e-mail antes de entrar.";
-
-  if (m.includes("user already registered"))
-    return "Esta conta já existe. Entre com seu e-mail e senha.";
-
-  return "Erro: " + message;
-}
-
 /* SESSÃO */
 async function initializeUser(user) {
+  if (!user) return;
+
+  if (currentUser && currentUser.id !== user.id) {
+    stopAutomaticUpdates();
+  }
+
   currentUser = user;
 
   $("authScreen").classList.add("hidden");
@@ -662,9 +707,13 @@ async function initializeUser(user) {
   $("welcomeText").textContent = "Olá, " + name + "!";
 
   await loadTransactions();
+
+  startAutomaticUpdates(user.id);
 }
 
 async function logout() {
+  stopAutomaticUpdates();
+
   const {error} = await db.auth.signOut();
 
   if (error) {
@@ -689,24 +738,113 @@ async function logout() {
 async function loadTransactions() {
   if (!currentUser) return;
 
-  $("history").innerHTML = '<div class="empty">Carregando...</div>';
-
-  const {data,error} = await db
-    .from("movimentacoes")
-    .select("*")
-    .eq("user_id",currentUser.id)
-    .order("date",{ascending:false})
-    .order("created_at",{ascending:false});
-
-  if (error) {
-    $("history").innerHTML =
-      '<div class="empty">Erro ao carregar: ' +
-      escapeHTML(error.message) + '</div>';
+  if (isLoadingTransactions) {
+    refreshRequested = true;
     return;
   }
 
-  transactions = data || [];
-  renderAll();
+  isLoadingTransactions = true;
+
+  try {
+    const userId = currentUser.id;
+
+    const {data,error} = await db
+      .from("movimentacoes")
+      .select("*")
+      .eq("user_id",userId)
+      .order("date",{ascending:false})
+      .order("created_at",{ascending:false});
+
+    if (error) {
+      console.error("Erro ao carregar movimentações:",error);
+      $("history").innerHTML =
+        '<div class="empty">Erro ao carregar: ' +
+        escapeHTML(error.message) + '</div>';
+      return;
+    }
+
+    /* Impede que dados de uma sessão antiga substituam a atual */
+    if (!currentUser || currentUser.id !== userId) return;
+
+    transactions = data || [];
+    renderAll();
+
+  } finally {
+    isLoadingTransactions = false;
+
+    if (refreshRequested) {
+      refreshRequested = false;
+      loadTransactions();
+    }
+  }
+}
+
+/* ATUALIZAÇÃO EM TEMPO REAL */
+function subscribeToTransactions(userId) {
+  if (transactionsChannel) {
+    db.removeChannel(transactionsChannel);
+    transactionsChannel = null;
+  }
+
+  transactionsChannel = db
+    .channel("neves-finance-" + userId)
+    .on(
+      "postgres_changes",
+      {
+        event:"*",
+        schema:"public",
+        table:"movimentacoes",
+        filter:"user_id=eq." + userId
+      },
+      payload => {
+        console.log("Movimentação alterada:",payload.eventType);
+        loadTransactions();
+      }
+    )
+    .subscribe(status => {
+      console.log("Supabase Realtime:",status);
+    });
+}
+
+/* ATUALIZAÇÃO AUTOMÁTICA DE SEGURANÇA */
+function startAutomaticUpdates(userId) {
+  stopAutomaticUpdates();
+
+  subscribeToTransactions(userId);
+
+  /* Atualiza a cada 30 segundos como alternativa ao Realtime */
+  refreshInterval = setInterval(() => {
+    if (
+      currentUser &&
+      currentUser.id === userId &&
+      document.visibilityState === "visible"
+    ) {
+      loadTransactions();
+    }
+  },30000);
+}
+
+/* ATUALIZA QUANDO VOLTA PARA A ABA DO APLICATIVO */
+document.addEventListener("visibilitychange",() => {
+  if (
+    document.visibilityState === "visible" &&
+    currentUser
+  ) {
+    loadTransactions();
+  }
+});
+
+/* ENCERRA AS ATUALIZAÇÕES */
+function stopAutomaticUpdates() {
+  if (transactionsChannel) {
+    db.removeChannel(transactionsChannel);
+    transactionsChannel = null;
+  }
+
+  if (refreshInterval) {
+    clearInterval(refreshInterval);
+    refreshInterval = null;
+  }
 }
 
 /* SALVAR MOVIMENTAÇÃO */
@@ -749,13 +887,14 @@ async function saveTransaction() {
   $("date").value = localDate();
 
   showMessage("formMessage","Movimentação salva com sucesso!");
+
   await loadTransactions();
 }
 
-/* EDITAR */
+/* EDITAR MOVIMENTAÇÃO */
 async function editTransaction(id) {
   const item = transactions.find(t => t.id === id);
-  if (!item) return;
+  if (!item || !currentUser) return;
 
   const description = prompt("Descrição:",item.description);
   if (description === null) return;
@@ -791,8 +930,9 @@ async function editTransaction(id) {
   await loadTransactions();
 }
 
-/* EXCLUIR */
+/* EXCLUIR MOVIMENTAÇÃO */
 async function deleteTransaction(id) {
+  if (!currentUser) return;
   if (!confirm("Deseja excluir esta movimentação?")) return;
 
   const {error} = await db
@@ -809,17 +949,6 @@ async function deleteTransaction(id) {
   await loadTransactions();
 }
 
-/* SEGURANÇA DE TEXTO */
-function escapeHTML(value) {
-  return String(value ?? "").replace(/[&<>"']/g, char => ({
-    "&":"&amp;",
-    "<":"&lt;",
-    ">":"&gt;",
-    '"':"&quot;",
-    "'":"&#39;"
-  }[char]));
-}
-
 /* RESUMO */
 function renderSummary() {
   const income = transactions
@@ -830,9 +959,10 @@ function renderSummary() {
     .filter(t => t.type === "expense")
     .reduce((s,t) => s + Number(t.amount),0);
 
-  $("balance").textContent = money(income-expense);
-  $("balance").className = income-expense >= 0 ? "green" : "red";
+  const balance = income-expense;
 
+  $("balance").textContent = money(balance);
+  $("balance").className = balance >= 0 ? "green" : "red";
   $("incomeTotal").textContent = money(income);
   $("expenseTotal").textContent = money(expense);
 }
@@ -851,13 +981,12 @@ function renderHistory() {
     <div class="transaction">
       <div class="transaction-info">
         <strong>${escapeHTML(t.description)}</strong>
-        <small>
-          ${escapeHTML(t.category)} • ${escapeHTML(t.date)}
-        </small>
+        <small>${escapeHTML(t.category)} • ${escapeHTML(t.date)}</small>
         <div class="${t.type === "income" ? "green" : "red"}">
           ${t.type === "income" ? "+" : "-"} ${money(t.amount)}
         </div>
       </div>
+
       <div class="transaction-actions">
         <button class="secondary small"
           onclick="editTransaction('${t.id}')">Editar</button>
@@ -868,164 +997,286 @@ function renderHistory() {
   `).join("");
 }
 
-/* FILTRO DE DATAS */
-function getFilteredTransactions() {
+/* CRIA OS PERÍODOS DO GRÁFICO */
+function getPeriodBuckets(period) {
   const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
   const today = localDate(now);
 
-  let start = new Date(now.getFullYear(),now.getMonth(),now.getDate());
-
-  if (currentPeriod === "week") {
-    const day = start.getDay();
-    start.setDate(start.getDate() - (day === 0 ? 6 : day-1));
+  if (period === "day") {
+    return [{
+      key:today,
+      label:"Hoje",
+      start:today,
+      end:today
+    }];
   }
 
-  if (currentPeriod === "month") {
-    start = new Date(now.getFullYear(),now.getMonth(),1);
+  if (period === "week") {
+    const monday = new Date(year,month,now.getDate());
+    const weekday = monday.getDay();
+    const offset = weekday === 0 ? 6 : weekday - 1;
+
+    monday.setDate(monday.getDate()-offset);
+
+    const names = ["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"];
+
+    return Array.from({length:7},(_,i) => {
+      const date = new Date(monday);
+      date.setDate(monday.getDate()+i);
+      const key = dateKey(date);
+
+      return {
+        key,
+        label:names[i],
+        start:key,
+        end:key
+      };
+    });
   }
 
-  if (currentPeriod === "year") {
-    start = new Date(now.getFullYear(),0,1);
+  if (period === "month") {
+    const totalDays = new Date(year,month+1,0).getDate();
+
+    return Array.from({length:totalDays},(_,i) => {
+      const date = new Date(year,month,i+1);
+      const key = dateKey(date);
+
+      return {
+        key,
+        label:String(i+1),
+        start:key,
+        end:key
+      };
+    });
   }
 
-  const startString = localDate(start);
+  if (period === "year") {
+    const names = [
+      "Jan","Fev","Mar","Abr","Mai","Jun",
+      "Jul","Ago","Set","Out","Nov","Dez"
+    ];
 
-  return transactions.filter(t =>
-    t.date >= startString && t.date <= today
-  );
+    return Array.from({length:12},(_,i) => {
+      const monthNumber = String(i+1).padStart(2,"0");
+      const key = `${year}-${monthNumber}`;
+
+      return {
+        key,
+        label:names[i],
+        start:`${key}-01`,
+        end:`${key}-${String(new Date(year,i+1,0).getDate()).padStart(2,"0")}`
+      };
+    });
+  }
+
+  return [];
 }
 
-function setPeriod(period) {
-  currentPeriod = period;
+/* FILTRA MOVIMENTAÇÕES PELO PERÍODO */
+function getPeriodData(period) {
+  const buckets = getPeriodBuckets(period);
+  if (!buckets.length) return [];
 
-  document.querySelectorAll("[data-period]").forEach(btn => {
-    btn.classList.toggle("active",btn.dataset.period === period);
+  const start = buckets[0].start;
+  const end = buckets[buckets.length-1].end;
+
+  return transactions.filter(t => {
+    const date = String(t.date).slice(0,10);
+    return date >= start && date <= end;
   });
-
-  renderCharts();
 }
 
-/* GRÁFICO DE BARRAS */
-function renderBarChart() {
-  const data = getFilteredTransactions();
+/* FILTROS INDEPENDENTES */
+function setPeriod(tab,period) {
+  const allowed = ["day","week","month","year"];
+  if (!allowed.includes(period)) return;
+
+  if (tab === "analysis") {
+    analysisPeriod = period;
+    updatePeriodButtons("analysis",period);
+    renderBarChart();
+  }
+
+  if (tab === "finance") {
+    financePeriod = period;
+    updatePeriodButtons("finance",period);
+    renderDonut();
+  }
+}
+
+/* ATUALIZA APARÊNCIA DOS BOTÕES */
+function updatePeriodButtons(tab,period) {
+  const section = tab === "analysis"
+    ? $("analysisFilters")
+    : $("financeFilters");
+
+  section.querySelectorAll("button").forEach(button => {
+    button.classList.toggle(
+      "active",
+      button.dataset.period === period
+    );
+  });
+}
+
+/* AGRUPA MOVIMENTAÇÕES */
+function getChartGroups(data,period) {
   const groups = {};
 
   data.forEach(t => {
-    let key = t.date;
+    let key = String(t.date).slice(0,10);
 
-    if (currentPeriod === "year") {
-      key = t.date.slice(0,7);
+    if (period === "year") {
+      key = key.slice(0,7);
     }
 
     if (!groups[key]) {
       groups[key] = {income:0,expense:0};
     }
 
-    groups[key][t.type] += Number(t.amount);
+    if (t.type === "income") {
+      groups[key].income += Number(t.amount);
+    }
+
+    if (t.type === "expense") {
+      groups[key].expense += Number(t.amount);
+    }
   });
 
-  let keys = Object.keys(groups).sort();
+  return groups;
+}
 
-  if (currentPeriod === "day") {
-    keys = [localDate()];
-  }
-
-  if (currentPeriod === "week" && keys.length === 0) {
-    keys = [localDate()];
-  }
+/* GRÁFICO DE BARRAS */
+function renderBarChart() {
+  const period = analysisPeriod;
+  const data = getPeriodData(period);
+  const groups = getChartGroups(data,period);
+  const buckets = getPeriodBuckets(period);
 
   const chart = $("barChart");
   const labels = $("chartLabels");
 
-  if (!keys.length) {
-    chart.innerHTML = '<div class="empty">Sem dados neste período.</div>';
-    labels.textContent = "";
-    $("chartDetails").textContent = "Nenhuma movimentação encontrada.";
-    return;
-  }
+  const totalIncome = data
+    .filter(t => t.type === "income")
+    .reduce((sum,t) => sum + Number(t.amount),0);
+
+  const totalExpense = data
+    .filter(t => t.type === "expense")
+    .reduce((sum,t) => sum + Number(t.amount),0);
+
+  $("analysisPeriodLabel").textContent =
+    `Entradas: ${money(totalIncome)} • Saídas: ${money(totalExpense)}`;
 
   const max = Math.max(
     1,
-    ...keys.map(k => Math.max(
-      groups[k]?.income || 0,
-      groups[k]?.expense || 0
-    ))
+    ...buckets.map(bucket => {
+      const value = groups[bucket.key] || {
+        income:0,
+        expense:0
+      };
+      return Math.max(value.income,value.expense);
+    })
   );
 
-  chart.innerHTML = keys.map(key => {
-    const value = groups[key] || {income:0,expense:0};
-    const incomeHeight = value.income/max*100;
-    const expenseHeight = value.expense/max*100;
+  chart.innerHTML = buckets.map(bucket => {
+    const value = groups[bucket.key] || {
+      income:0,
+      expense:0
+    };
+
+    const incomeHeight = value.income / max * 100;
+    const expenseHeight = value.expense / max * 100;
 
     return `
       <div class="chart-item">
         <button class="bar income"
           title="Entradas: ${money(value.income)}"
-          style="height:${Math.max(value.income ? 3 : 0,incomeHeight)}%"
-          onclick="showChartDetails('${key}','income')"></button>
+          style="height:${value.income ? Math.max(4,incomeHeight) : 0}%"
+          onclick="showChartDetails('${bucket.key}','income')">
+        </button>
+
         <button class="bar expense"
           title="Saídas: ${money(value.expense)}"
-          style="height:${Math.max(value.expense ? 3 : 0,expenseHeight)}%"
-          onclick="showChartDetails('${key}','expense')"></button>
+          style="height:${value.expense ? Math.max(4,expenseHeight) : 0}%"
+          onclick="showChartDetails('${bucket.key}','expense')">
+        </button>
       </div>
     `;
   }).join("");
 
-  labels.innerHTML = keys.map(k =>
-    `<span style="display:inline-block;width:${100/keys.length}%;text-align:center">
-    ${escapeHTML(k.slice(5))}
-    </span>`
+  labels.innerHTML = buckets.map(bucket =>
+    `<span>${escapeHTML(bucket.label)}</span>`
   ).join("");
+
+  $("chartDetails").textContent =
+    "Toque em uma barra para ver as movimentações daquele período.";
 }
 
+/* DETALHES DAS BARRAS */
 function showChartDetails(key,type) {
-  let selected = transactions.filter(t => {
-    if (currentPeriod === "year") {
-      return t.date.startsWith(key) && t.type === type;
-    }
-    return t.date === key && t.type === type;
+  const selected = transactions.filter(t => {
+    const date = String(t.date).slice(0,10);
+
+    const matchesDate = analysisPeriod === "year"
+      ? date.startsWith(key)
+      : date === key;
+
+    return matchesDate && t.type === type;
   });
 
   const title = type === "income" ? "Entradas" : "Saídas";
 
   if (!selected.length) {
-    $("chartDetails").textContent = "Não existem " + title.toLowerCase() + " neste período.";
+    $("chartDetails").innerHTML =
+      `<strong>${title}</strong><br>Nenhuma movimentação nesta data.`;
     return;
   }
 
-  const total = selected.reduce((s,t) => s + Number(t.amount),0);
+  const total = selected.reduce(
+    (sum,t) => sum + Number(t.amount),0
+  );
 
-  $("chartDetails").innerHTML =
-    `<strong>${title} — ${escapeHTML(key)}</strong><br>
-     Total: ${money(total)}<br>` +
-    selected.map(t =>
+  $("chartDetails").innerHTML = `
+    <strong>${title} — ${escapeHTML(key)}</strong><br>
+    Total: ${money(total)}<br>
+    ${selected.map(t =>
       `${escapeHTML(t.description)}: ${money(t.amount)}`
-    ).join("<br>");
+    ).join("<br>")}
+  `;
 }
 
 /* GRÁFICO CIRCULAR */
 function renderDonut() {
-  const data = getFilteredTransactions();
+  const data = getPeriodData(financePeriod);
 
   const income = data
     .filter(t => t.type === "income")
-    .reduce((s,t) => s + Number(t.amount),0);
+    .reduce((sum,t) => sum + Number(t.amount),0);
 
   const expense = data
     .filter(t => t.type === "expense")
-    .reduce((s,t) => s + Number(t.amount),0);
+    .reduce((sum,t) => sum + Number(t.amount),0);
 
   const profit = income-expense;
 
-  let expensePercent = income > 0 ? expense/income*100 : 0;
-  let profitPercent = income > 0 ? profit/income*100 : 0;
+  const expensePercent = income > 0
+    ? expense / income * 100
+    : 0;
+
+  const profitPercent = income > 0
+    ? profit / income * 100
+    : 0;
 
   const redDegrees = income > 0
     ? Math.min(100,Math.max(0,expensePercent))*3.6
-    : (expense > 0 ? 360 : 0);
+    : expense > 0 ? 360 : 0;
 
   $("donut").style.background =
-    `conic-gradient(var(--red) 0deg ${redDegrees}deg,var(--green) ${redDegrees}deg 360deg)`;
+    `conic-gradient(
+      var(--red) 0deg ${redDegrees}deg,
+      var(--green) ${redDegrees}deg 360deg
+    )`;
 
   $("profitPercent").textContent =
     income > 0 ? profitPercent.toFixed(1)+"%" : "—";
@@ -1033,17 +1284,36 @@ function renderDonut() {
   $("periodIncome").textContent = money(income);
   $("periodExpense").textContent = money(expense);
   $("periodProfit").textContent = money(profit);
-  $("periodProfit").className = profit >= 0 ? "green" : "red";
+
+  $("periodProfit").className =
+    profit >= 0 ? "green" : "red";
+
+  const names = {
+    day:"Hoje",
+    week:"Esta semana",
+    month:"Este mês",
+    year:"Este ano"
+  };
+
+  $("financePeriodLabel").textContent = names[financePeriod];
 
   $("financeDetails").innerHTML = `
     Entradas: ${money(income)}<br>
-    Despesas: ${income > 0 ? expensePercent.toFixed(1)+"%" : "Sem entradas"}<br>
-    Resultado: ${income > 0 ? profitPercent.toFixed(1)+"%" : "Sem entradas"}<br>
-    ${profit < 0 ? "Atenção: suas despesas superaram as entradas." : "Resultado calculado sobre as entradas do período."}
+    Despesas: ${
+      income > 0 ? expensePercent.toFixed(1)+"%" : "Sem entradas"
+    }<br>
+    Resultado: ${
+      income > 0 ? profitPercent.toFixed(1)+"%" : "Sem entradas"
+    }<br>
+    ${
+      profit < 0
+        ? "Atenção: suas despesas superaram as entradas."
+        : "Resultado calculado sobre as entradas do período."
+    }
   `;
 }
 
-/* ATUALIZAÇÃO */
+/* ATUALIZAÇÃO GERAL */
 function renderCharts() {
   renderBarChart();
   renderDonut();
@@ -1061,22 +1331,37 @@ function showPage(page) {
   $("analysisPage").classList.toggle("hidden",page !== "analysis");
   $("financePage").classList.toggle("hidden",page !== "finance");
 
-  document.querySelectorAll("nav button").forEach(btn => {
-    btn.classList.toggle("active",btn.dataset.page === page);
+  document.querySelectorAll("nav button").forEach(button => {
+    button.classList.toggle(
+      "active",
+      button.dataset.page === page
+    );
   });
 
-  renderCharts();
+  if (page === "analysis") {
+    updatePeriodButtons("analysis",analysisPeriod);
+    renderBarChart();
+  }
+
+  if (page === "finance") {
+    updatePeriodButtons("finance",financePeriod);
+    renderDonut();
+  }
 }
 
 /* INICIALIZAÇÃO */
 $("date").value = localDate();
 
-db.auth.onAuthStateChange(async (event,session) => {
+updatePeriodButtons("analysis",analysisPeriod);
+updatePeriodButtons("finance",financePeriod);
+
+db.auth.onAuthStateChange((event,session) => {
   if (session?.user) {
     if (!currentUser || currentUser.id !== session.user.id) {
-      await initializeUser(session.user);
+      initializeUser(session.user);
     }
   } else if (event === "SIGNED_OUT") {
+    stopAutomaticUpdates();
     currentUser = null;
     transactions = [];
     $("app").style.display = "none";
@@ -1089,7 +1374,10 @@ db.auth.onAuthStateChange(async (event,session) => {
   const {data,error} = await db.auth.getSession();
 
   if (error) {
-    showMessage("authMessage","Erro ao verificar sessão: " + error.message);
+    showMessage(
+      "authMessage",
+      "Erro ao verificar sessão: " + error.message
+    );
     return;
   }
 
