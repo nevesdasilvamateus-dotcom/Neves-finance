@@ -449,7 +449,7 @@ nav button.active {
 <!-- FINANCEIRO -->
 <section id="financePage" class="hidden">
   <h2>Financeiro</h2>
-  <p class="muted">Veja a proporção entre despesas e dinheiro restante.</p>
+  <p class="muted">Veja a proporção entre despesas e entrada .</p>
 
   <div class="filter">
     <button class="active" data-period="day" onclick="setPeriod('day')">Dia</button>
@@ -463,19 +463,19 @@ nav button.active {
     <div id="donut" class="donut">
       <div class="donut-center">
         <strong id="profitPercent">0%</strong>
-        <div class="muted">Resultado</div>
+        <div class="muted">Entrada</div>
       </div>
     </div>
     <div class="legend" style="justify-content:center">
       <span><i class="dot" style="background:var(--red)"></i>Despesas</span>
-      <span><i class="dot" style="background:var(--green)"></i>Resultado</span>
+      <span><i class="dot" style="background:var(--green)"></i>Lucros</span>
     </div>
     <div class="detail-list" id="financeDetails"></div>
   </div>
 
   <div class="grid">
     <div class="metric">
-      <span>Entradas no período</span>
+      <span>Lucro no período</span>
       <strong class="green" id="periodIncome">R$ 0,00</strong>
     </div>
     <div class="metric">
