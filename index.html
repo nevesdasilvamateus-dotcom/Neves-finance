@@ -608,5 +608,86 @@ $("referenceDate").value = today;
 
 refresh();
 </script>
+
+<!-- Biblioteca oficial do Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+  // Dados do projeto Supabase
+  const SUPABASE_URL = "COLE_SUA_PROJECT_URL";
+  const SUPABASE_KEY = "COLE_SUA_PUBLISHABLE_KEY";
+
+  // Criar conexão
+  const { createClient } = window.supabase;
+
+  const supabaseClient = createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+
+  console.log("NEVES FINANCE conectado ao Supabase!");
+</script>
+```
+
+Agora substitua:
+
+- `COLE_SUA_PROJECT_URL` pela URL do seu projeto.
+- `COLE_SUA_PUBLISHABLE_KEY` pela chave pública.
+
+A biblioteca oficial é o Supabase JavaScript v2, que pode ser carregado diretamente por CDN, sem instalar Node.js ou outras ferramentas. <Cite refs={["turn468183search3","turn468183search4"]}/>
+
+**Exemplo de como ficará:**
+
+```html
+SUPABASE_URL = "https://seuprojeto.supabase.co";
+SUPABASE_KEY = "sb_publishable_suachave";
+```
+
+Não use esses valores de exemplo literalmente.
+
+## Etapa 3 — Salvar e testar
+
+1. Salve o `index.html` no Acode.
+2. Abra o aplicativo no navegador.
+3. Abra o console de desenvolvedor, se disponível.
+4. Verifique se aparece:
+
+<box border radius="md" padding={3} gap={2}>
+  <row align=center gap={2}>
+    <icon name="check-circle-filled" color="success" size="lg"/>
+    **NEVES FINANCE conectado ao Supabase!**
+  </row>
+  <text color="secondary" size="xs">Mensagem esperada no console.</text>
+</box>
+
+Isso confirma que o cliente foi inicializado. Ainda precisaremos testar o login e a gravação de dados.
+
+## Etapa 4 — Próximo passo
+
+Depois de conectar, vamos implementar:
+
+1. Cadastro de usuários com e-mail e senha.
+2. Login e logout.
+3. Salvar receitas no Supabase.
+4. Salvar despesas no Supabase.
+5. Carregar o histórico automaticamente.
+6. Atualizar os gráficos com os dados salvos.
+
+<box border radius="lg" padding={3} gap={2}>
+  **Quero conferir sua configuração antes de avançar.**
+
+  Você já conseguiu encontrar a URL e a Publishable Key no Supabase?
+
+  {@body const [status,setStatus] = DIL.useState("nao")}
+  <radio-group direction="col" value={status} onChange={setStatus}>
+    <radio value="sim">Sim, encontrei as duas.</radio>
+    <radio value="url">Encontrei a URL, mas não a chave.</radio>
+    <radio value="nao">Ainda não encontrei nenhuma.</radio>
+    <radio value="codigo">Já coloquei o código no index.html.</radio>
+  </radio-group>
+  <button block onClick={()=>GenUI.issueNewTurn(status==="sim"?"Encontrei a URL e a Publishable Key. Vamos continuar.":status==="url"?"Encontrei a URL, mas não a chave. Me ajude a localizar.":status==="codigo"?"Já coloquei o código de conexão no index.html. Vamos testar e configurar o login.":"Ainda não encontrei a URL nem a chave. Me ensine onde ficam.")}>Continuar</button>
+</box>
+
+**Importante:** não envie sua chave secreta nem a `service_role`. A Publishable Key pode ficar no HTML, desde que as políticas de segurança estejam configuradas corretamente.
 </body>
 </html>
