@@ -1,5 +1,4 @@
 
- 
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -180,6 +179,27 @@ nav button.active {
   background:#153858;
   color:#65c3ff;
   border-color:var(--blue);
+}
+.period-picker {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-bottom:15px;
+  padding:13px;
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:12px;
+}
+.period-picker label {
+  display:block;
+  color:var(--muted);
+  font-size:12px;
+}
+.period-picker input,.period-picker select {
+  margin:6px 0 0;
+}
+.period-date {
+  grid-column:1/-1;
 }
 .chart {
   display:flex;
@@ -433,6 +453,37 @@ nav button.active {
           onclick="setPeriod('analysis','year')">Ano</button>
       </div>
 
+      <div class="period-picker">
+        <div>
+          <label for="analysisMonth">Mês de consulta</label>
+          <select id="analysisMonth"
+            onchange="changePeriodDate('analysis','month',this.value)">
+            <option value="0">Janeiro</option>
+            <option value="1">Fevereiro</option>
+            <option value="2">Março</option>
+            <option value="3">Abril</option>
+            <option value="4">Maio</option>
+            <option value="5">Junho</option>
+            <option value="6">Julho</option>
+            <option value="7">Agosto</option>
+            <option value="8">Setembro</option>
+            <option value="9">Outubro</option>
+            <option value="10">Novembro</option>
+            <option value="11">Dezembro</option>
+          </select>
+        </div>
+        <div>
+          <label for="analysisYear">Ano</label>
+          <select id="analysisYear"
+            onchange="changePeriodDate('analysis','year',this.value)"></select>
+        </div>
+        <div class="period-date">
+          <label for="analysisDate">Data de referência para dia ou semana</label>
+          <input id="analysisDate" type="date"
+            onchange="changePeriodDate('analysis','date',this.value)">
+        </div>
+      </div>
+
       <div class="panel">
         <div class="legend">
           <span><i class="dot" style="background:var(--green)"></i>Entradas</span>
@@ -462,6 +513,37 @@ nav button.active {
           onclick="setPeriod('finance','month')">Mês</button>
         <button data-period="year"
           onclick="setPeriod('finance','year')">Ano</button>
+      </div>
+
+      <div class="period-picker">
+        <div>
+          <label for="financeMonth">Mês de consulta</label>
+          <select id="financeMonth"
+            onchange="changePeriodDate('finance','month',this.value)">
+            <option value="0">Janeiro</option>
+            <option value="1">Fevereiro</option>
+            <option value="2">Março</option>
+            <option value="3">Abril</option>
+            <option value="4">Maio</option>
+            <option value="5">Junho</option>
+            <option value="6">Julho</option>
+            <option value="7">Agosto</option>
+            <option value="8">Setembro</option>
+            <option value="9">Outubro</option>
+            <option value="10">Novembro</option>
+            <option value="11">Dezembro</option>
+          </select>
+        </div>
+        <div>
+          <label for="financeYear">Ano</label>
+          <select id="financeYear"
+            onchange="changePeriodDate('finance','year',this.value)"></select>
+        </div>
+        <div class="period-date">
+          <label for="financeDate">Data de referência para dia ou semana</label>
+          <input id="financeDate" type="date"
+            onchange="changePeriodDate('finance','date',this.value)">
+        </div>
       </div>
 
       <div class="panel">
@@ -519,13 +601,22 @@ let authMode = "login";
 let analysisPeriod = "day";
 let financePeriod = "day";
 
-/* CONTROLE DA ATUALIZAÇÃO AUTOMÁTICA */
+let analysisDate = localDate();
+let financeDate = localDate();
+
+/* ATUALIZAÇÃO AUTOMÁTICA */
 let transactionsChannel = null;
 let refreshInterval = null;
 let isLoadingTransactions = false;
 let refreshRequested = false;
+let realtimeTimer = null;
 
 const $ = id => document.getElementById(id);
+
+const monthNames = [
+  "Janeiro","Fevereiro","Março","Abril","Maio","Junho",
+  "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"
+];
 
 /* UTILITÁRIOS */
 function money(value) {
@@ -569,6 +660,107 @@ function escapeHTML(value) {
     '"':"&quot;",
     "'":"&#39;"
   }[char]));
+}
+
+function getSelectedDate(tab) {
+  return tab === "analysis" ? analysisDate : financeDate;
+}
+
+function setSelectedDate(tab,value) {
+  const today = localDate();
+  if (!value) return;
+
+  if (value > today) value = today;
+
+  if (tab === "analysis") analysisDate = value;
+  else financeDate = value;
+
+  const date = parseLocalDate(value);
+  const prefix = tab === "analysis" ? "analysis" : "finance";
+
+  $(prefix + "Month").value = String(date.getMonth());
+  $(prefix + "Year").value = String(date.getFullYear());
+  $(prefix + "Date").value = value;
+}
+
+/* CONTROLES DE DATA */
+function setupDateSelectors() {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+
+  const yearsInData = transactions
+    .map(t => Number(String(t.date).slice(0,4)))
+    .filter(y => Number.isFinite(y) && y > 1900);
+
+  const oldestYear = yearsInData.length
+    ? Math.min(currentYear,...yearsInData)
+    : currentYear - 10;
+
+  ["analysisYear","financeYear"].forEach(id => {
+    const select = $(id);
+    const selected = id === "analysisYear"
+      ? parseLocalDate(analysisDate).getFullYear()
+      : parseLocalDate(financeDate).getFullYear();
+
+    select.innerHTML = "";
+
+    for (let year = currentYear; year >= oldestYear; year--) {
+      const option = document.createElement("option");
+      option.value = String(year);
+      option.textContent = String(year);
+      select.appendChild(option);
+    }
+
+    select.value = String(Math.min(selected,currentYear));
+  });
+
+  $("analysisDate").max = localDate();
+  $("financeDate").max = localDate();
+
+  setSelectedDate("analysis",analysisDate);
+  setSelectedDate("finance",financeDate);
+}
+
+function changePeriodDate(tab,field,value) {
+  const today = new Date();
+  const todayString = localDate(today);
+  const prefix = tab === "analysis" ? "analysis" : "finance";
+
+  let date = parseLocalDate(getSelectedDate(tab));
+
+  if (field === "date") {
+    if (value > todayString) value = todayString;
+    setSelectedDate(tab,value);
+  }
+
+  if (field === "month") {
+    const month = Number(value);
+    const year = date.getFullYear();
+    const day = date.getDate();
+    const lastDay = new Date(year,month+1,0).getDate();
+
+    date = new Date(year,month,Math.min(day,lastDay));
+
+    if (date > today) date = new Date(today);
+
+    setSelectedDate(tab,localDate(date));
+  }
+
+  if (field === "year") {
+    const year = Math.min(Number(value),today.getFullYear());
+    const month = date.getMonth();
+    const day = date.getDate();
+    const lastDay = new Date(year,month+1,0).getDate();
+
+    date = new Date(year,month,Math.min(day,lastDay));
+
+    if (date > today) date = new Date(today);
+
+    setSelectedDate(tab,localDate(date));
+  }
+
+  if (tab === "analysis") renderBarChart();
+  else renderDonut();
 }
 
 /* LOGIN E CADASTRO */
@@ -708,7 +900,9 @@ async function initializeUser(user) {
 
   await loadTransactions();
 
-  startAutomaticUpdates(user.id);
+  if (currentUser && currentUser.id === user.id) {
+    startAutomaticUpdates(user.id);
+  }
 }
 
 async function logout() {
@@ -763,12 +957,14 @@ async function loadTransactions() {
       return;
     }
 
-    /* Impede que dados de uma sessão antiga substituam a atual */
     if (!currentUser || currentUser.id !== userId) return;
 
     transactions = data || [];
+    setupDateSelectors();
     renderAll();
 
+  } catch(error) {
+    console.error("Falha na atualização:",error);
   } finally {
     isLoadingTransactions = false;
 
@@ -779,7 +975,7 @@ async function loadTransactions() {
   }
 }
 
-/* ATUALIZAÇÃO EM TEMPO REAL */
+/* SUPABASE REALTIME */
 function subscribeToTransactions(userId) {
   if (transactionsChannel) {
     db.removeChannel(transactionsChannel);
@@ -798,7 +994,13 @@ function subscribeToTransactions(userId) {
       },
       payload => {
         console.log("Movimentação alterada:",payload.eventType);
-        loadTransactions();
+
+        clearTimeout(realtimeTimer);
+        realtimeTimer = setTimeout(() => {
+          if (currentUser && currentUser.id === userId) {
+            loadTransactions();
+          }
+        },300);
       }
     )
     .subscribe(status => {
@@ -806,13 +1008,12 @@ function subscribeToTransactions(userId) {
     });
 }
 
-/* ATUALIZAÇÃO AUTOMÁTICA DE SEGURANÇA */
+/* ATUALIZAÇÃO AUTOMÁTICA */
 function startAutomaticUpdates(userId) {
   stopAutomaticUpdates();
 
   subscribeToTransactions(userId);
 
-  /* Atualiza a cada 30 segundos como alternativa ao Realtime */
   refreshInterval = setInterval(() => {
     if (
       currentUser &&
@@ -824,7 +1025,6 @@ function startAutomaticUpdates(userId) {
   },30000);
 }
 
-/* ATUALIZA QUANDO VOLTA PARA A ABA DO APLICATIVO */
 document.addEventListener("visibilitychange",() => {
   if (
     document.visibilityState === "visible" &&
@@ -834,7 +1034,10 @@ document.addEventListener("visibilitychange",() => {
   }
 });
 
-/* ENCERRA AS ATUALIZAÇÕES */
+window.addEventListener("focus",() => {
+  if (currentUser) loadTransactions();
+});
+
 function stopAutomaticUpdates() {
   if (transactionsChannel) {
     db.removeChannel(transactionsChannel);
@@ -844,6 +1047,11 @@ function stopAutomaticUpdates() {
   if (refreshInterval) {
     clearInterval(refreshInterval);
     refreshInterval = null;
+  }
+
+  if (realtimeTimer) {
+    clearTimeout(realtimeTimer);
+    realtimeTimer = null;
   }
 }
 
@@ -893,7 +1101,7 @@ async function saveTransaction() {
 
 /* EDITAR MOVIMENTAÇÃO */
 async function editTransaction(id) {
-  const item = transactions.find(t => t.id === id);
+  const item = transactions.find(t => String(t.id) === String(id));
   if (!item || !currentUser) return;
 
   const description = prompt("Descrição:",item.description);
@@ -989,32 +1197,39 @@ function renderHistory() {
 
       <div class="transaction-actions">
         <button class="secondary small"
-          onclick="editTransaction('${t.id}')">Editar</button>
+          onclick="editTransaction('${escapeHTML(t.id)}')">Editar</button>
         <button class="danger small"
-          onclick="deleteTransaction('${t.id}')">Excluir</button>
+          onclick="deleteTransaction('${escapeHTML(t.id)}')">Excluir</button>
       </div>
     </div>
   `).join("");
 }
 
+/* DATA DE REFERÊNCIA DE CADA ABA */
+function getReferenceDate(tab) {
+  return parseLocalDate(getSelectedDate(tab));
+}
+
 /* CRIA OS PERÍODOS DO GRÁFICO */
-function getPeriodBuckets(period) {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const today = localDate(now);
+function getPeriodBuckets(period,tab) {
+  const selected = getReferenceDate(tab);
+  const year = selected.getFullYear();
+  const month = selected.getMonth();
+  const today = localDate();
 
   if (period === "day") {
+    const key = dateKey(selected);
+
     return [{
-      key:today,
-      label:"Hoje",
-      start:today,
-      end:today
+      key,
+      label:key.slice(8,10)+"/"+key.slice(5,7),
+      start:key,
+      end:key
     }];
   }
 
   if (period === "week") {
-    const monday = new Date(year,month,now.getDate());
+    const monday = new Date(year,month,selected.getDate());
     const weekday = monday.getDay();
     const offset = weekday === 0 ? 6 : weekday - 1;
 
@@ -1075,12 +1290,16 @@ function getPeriodBuckets(period) {
 }
 
 /* FILTRA MOVIMENTAÇÕES PELO PERÍODO */
-function getPeriodData(period) {
-  const buckets = getPeriodBuckets(period);
+function getPeriodData(period,tab) {
+  const buckets = getPeriodBuckets(period,tab);
   if (!buckets.length) return [];
 
   const start = buckets[0].start;
-  const end = buckets[buckets.length-1].end;
+
+  let end = buckets[buckets.length-1].end;
+  const today = localDate();
+
+  if (end > today) end = today;
 
   return transactions.filter(t => {
     const date = String(t.date).slice(0,10);
@@ -1088,7 +1307,7 @@ function getPeriodData(period) {
   });
 }
 
-/* FILTROS INDEPENDENTES */
+/* FILTROS */
 function setPeriod(tab,period) {
   const allowed = ["day","week","month","year"];
   if (!allowed.includes(period)) return;
@@ -1106,7 +1325,7 @@ function setPeriod(tab,period) {
   }
 }
 
-/* ATUALIZA APARÊNCIA DOS BOTÕES */
+/* APARÊNCIA DOS FILTROS */
 function updatePeriodButtons(tab,period) {
   const section = tab === "analysis"
     ? $("analysisFilters")
@@ -1150,9 +1369,9 @@ function getChartGroups(data,period) {
 /* GRÁFICO DE BARRAS */
 function renderBarChart() {
   const period = analysisPeriod;
-  const data = getPeriodData(period);
+  const data = getPeriodData(period,"analysis");
   const groups = getChartGroups(data,period);
-  const buckets = getPeriodBuckets(period);
+  const buckets = getPeriodBuckets(period,"analysis");
 
   const chart = $("barChart");
   const labels = $("chartLabels");
@@ -1165,8 +1384,10 @@ function renderBarChart() {
     .filter(t => t.type === "expense")
     .reduce((sum,t) => sum + Number(t.amount),0);
 
+  const reference = getReferenceDate("analysis");
+
   $("analysisPeriodLabel").textContent =
-    `Entradas: ${money(totalIncome)} • Saídas: ${money(totalExpense)}`;
+    `${monthNames[reference.getMonth()]} de ${reference.getFullYear()} • Entradas: ${money(totalIncome)} • Saídas: ${money(totalExpense)}`;
 
   const max = Math.max(
     1,
@@ -1218,9 +1439,13 @@ function showChartDetails(key,type) {
   const selected = transactions.filter(t => {
     const date = String(t.date).slice(0,10);
 
-    const matchesDate = analysisPeriod === "year"
-      ? date.startsWith(key)
-      : date === key;
+    let matchesDate = false;
+
+    if (analysisPeriod === "year") {
+      matchesDate = date.startsWith(key);
+    } else {
+      matchesDate = date === key;
+    }
 
     return matchesDate && t.type === type;
   });
@@ -1248,7 +1473,7 @@ function showChartDetails(key,type) {
 
 /* GRÁFICO CIRCULAR */
 function renderDonut() {
-  const data = getPeriodData(financePeriod);
+  const data = getPeriodData(financePeriod,"finance");
 
   const income = data
     .filter(t => t.type === "income")
@@ -1288,14 +1513,17 @@ function renderDonut() {
   $("periodProfit").className =
     profit >= 0 ? "green" : "red";
 
-  const names = {
-    day:"Hoje",
-    week:"Esta semana",
-    month:"Este mês",
-    year:"Este ano"
+  const reference = getReferenceDate("finance");
+
+  const periodNames = {
+    day:"Dia",
+    week:"Semana",
+    month:"Mês",
+    year:"Ano"
   };
 
-  $("financePeriodLabel").textContent = names[financePeriod];
+  $("financePeriodLabel").textContent =
+    `${periodNames[financePeriod]} • ${monthNames[reference.getMonth()]} de ${reference.getFullYear()}`;
 
   $("financeDetails").innerHTML = `
     Entradas: ${money(income)}<br>
@@ -1351,9 +1579,10 @@ function showPage(page) {
 
 /* INICIALIZAÇÃO */
 $("date").value = localDate();
+$("analysisDate").value = localDate();
+$("financeDate").value = localDate();
 
-updatePeriodButtons("analysis",analysisPeriod);
-updatePeriodButtons("finance",financePeriod);
+setupDateSelectors();
 
 db.auth.onAuthStateChange((event,session) => {
   if (session?.user) {
